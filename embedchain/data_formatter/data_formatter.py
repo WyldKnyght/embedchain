@@ -108,10 +108,9 @@ class DataFormatter(JSONSerializable):
             DataType.CSV: TableChunker,
             DataType.MDX: MdxChunker,
         }
-        if data_type in chunker_classes:
-            chunker_class: type = chunker_classes[data_type]
-            chunker: BaseChunker = chunker_class(config)
-            chunker.set_data_type(data_type)
-            return chunker
-        else:
+        if data_type not in chunker_classes:
             raise ValueError(f"Unsupported data type: {data_type}")
+        chunker_class: type = chunker_classes[data_type]
+        chunker: BaseChunker = chunker_class(config)
+        chunker.set_data_type(data_type)
+        return chunker

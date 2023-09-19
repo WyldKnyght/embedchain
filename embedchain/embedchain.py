@@ -205,7 +205,7 @@ class EmbedChain(JSONSerializable):
         # Send anonymous telemetry
         if self.config.collect_metrics:
             # it's quicker to check the variable twice than to count words when they won't be submitted.
-            word_count = sum([len(document.split(" ")) for document in documents])
+            word_count = sum(len(document.split(" ")) for document in documents)
 
             extra_metadata = {"data_type": data_type.value, "word_count": word_count, "chunks_count": new_chunks}
             thread_telemetry = threading.Thread(target=self._send_telemetry_event, args=("add", extra_metadata))
@@ -296,7 +296,7 @@ class EmbedChain(JSONSerializable):
             if not data_dict:
                 src_copy = src
                 if len(src_copy) > 50:
-                    src_copy = src[:50] + "..."
+                    src_copy = f"{src[:50]}..."
                 print(f"All data from {src_copy} already exists in the database.")
                 # Make sure to return a matching return type
                 return [], [], [], 0
@@ -419,7 +419,7 @@ class EmbedChain(JSONSerializable):
             return [], [], [], 0
 
         # this means that doc content has changed.
-        if existing_doc_id and existing_doc_id != new_doc_id:
+        if existing_doc_id:
             print("Doc content has changed. Recomputing chunks and embeddings intelligently.")
             self.db.delete({"doc_id": existing_doc_id})
 
@@ -439,7 +439,7 @@ class EmbedChain(JSONSerializable):
             if not data_dict:
                 src_copy = src
                 if len(src_copy) > 50:
-                    src_copy = src[:50] + "..."
+                    src_copy = f"{src[:50]}..."
                 print(f"All data from {src_copy} already exists in the database.")
                 # Make sure to return a matching return type
                 return [], [], [], 0
@@ -509,13 +509,11 @@ class EmbedChain(JSONSerializable):
         if self.config.id is not None:
             where.update({"app_id": self.config.id})
 
-        contents = self.db.query(
+        return self.db.query(
             input_query=input_query,
             n_results=query_config.number_documents,
             where=where,
         )
-
-        return contents
 
     def query(self, input_query: str, config: BaseLlmConfig = None, dry_run=False, where: Optional[Dict] = None) -> str:
         """
@@ -640,7 +638,7 @@ class EmbedChain(JSONSerializable):
                 "u_id": self.u_id,
             }
             if extra_metadata:
-                metadata.update(extra_metadata)
+                metadata |= extra_metadata
 
             response = requests.post(url, json={"metadata": metadata})
             if response.status_code != 200:
